@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>翔仔自律系統 - HSIANG Self-Discipline System v3.0</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for Visual Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Canvas Confetti for Achievements -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Marked.js for Markdown Parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+TC:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans TC"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    },
+                    colors: {
+                        neonBlue: '#00f2fe',
+                        neonPurple: '#7928ca',
+                        neonPink: '#ff0080',
+                        cyberDark: '#080c14',
+                        cyberCard: '#0f172a',
+                        cyberBorder: '#1e293b'
+                    },
+                    animation: {
+                        'pulse-glow': 'pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'scanline': 'scanline 8s linear infinite',
+                        'float': 'float 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        pulseGlow: {
+                            '0%, 100%': { opacity: '0.8', boxShadow: '0 0 15px rgba(0, 242, 254, 0.3)' },
+                            '50%': { opacity: '1', boxShadow: '0 0 30px rgba(0, 242, 254, 0.7)' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-6px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            background-color: #050811;
+            color: #f1f5f9;
+            font-family: 'Noto Sans TC', sans-serif;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(0, 242, 254, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(121, 40, 202, 0.05) 0%, transparent 40%);
+            background-attachment: fixed;
+        }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .glass-panel-glow {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 242, 254, 0.25);
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.15);
+        }
+
+        .neon-border-blue {
+            border-color: #00f2fe;
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.3);
+        }
+
+        .neon-text-gradient {
+            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 50%, #7928ca 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #080c14;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00f2fe;
+        }
+
+        /* Markdown Styling inside AI Modal */
+        .markdown-body h1, .markdown-body h2, .markdown-body h3 {
+            color: #00f2fe;
+            font-weight: 700;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .markdown-body p {
+            margin-bottom: 0.75rem;
+            line-height: 1.6;
+        }
+        .markdown-body ul, .markdown-body ol {
+            padding-left: 1.25rem;
+            margin-bottom: 0.75rem;
+        }
+        .markdown-body li {
+            list-style-type: disc;
+            margin-bottom: 0.25rem;
+        }
+        .markdown-body strong {
+            color: #38bdf8;
+        }
+        .markdown-body code {
+            background: rgba(0, 242, 254, 0.1);
+            color: #00f2fe;
+            padding: 0.1rem 0.3rem;
+            border-radius: 0.25rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-12 overflow-x-hidden text-slate-200">
+
+    <!-- Top Navigation Bar -->
+    <header class="sticky top-0 z-40 w-full glass-panel border-b border-slate-800/80 px-4 lg:px-8 py-3 mb-6">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
+                    <i class="fa-solid me-0 fa-brain text-slate-900 text-xl font-bold"></i>
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xl font-black tracking-wider text-white">HSIANG<span class="text-cyan-400">.SYSTEM</span></span>
+                        <span class="px-2 py-0.5 text-[10px] font-mono font-bold uppercase rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">v3.0 AI Prime</span>
+                    </div>
+                    <p class="text-xs text-slate-400 font-mono">國立中正大學 資管所碩一 | 模組化自律生活系統</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <div class="hidden md:flex items-center space-x-2 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-800">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="text-xs font-mono text-slate-300">SYSTEM STATUS: <span class="text-emerald-400 font-bold">OPTIMAL</span></span>
+                </div>
+                
+                <div class="text-right hidden sm:block">
+                    <div id="liveClock" class="text-sm font-mono font-bold text-cyan-300">00:00:00</div>
+                    <div id="liveDate" class="text-[11px] text-slate-400 font-mono">2026-10-05 Mon</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 lg:px-8 space-y-6">
+
+        <!-- HERO HEADER BLOCK -->
+        <section class="glass-panel rounded-2xl p-6 lg:p-8 relative overflow-hidden border border-slate-800">
+            <div class="absolute -right-16 -top-16 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -left-16 -bottom-16 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center relative z-10">
+                <div class="lg:col-span-2 space-y-3">
+                    <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700 text-xs font-mono text-cyan-300">
+                        <i class="fa-solid fa-quote-left text-cyan-400"></i>
+                        <span>「把複雜的事情模組化，把混亂的生活演算法化。」</span>
+                    </div>
+                    <h1 class="text-2xl sm:text-4xl font-black tracking-tight text-white">
+                        歡迎回到核心指揮中心，<span class="neon-text-gradient">翔仔！</span>
+                    </h1>
+                    <p class="text-sm text-slate-300 leading-relaxed max-w-2xl">
+                        此系統整合你的 <span class="text-cyan-300 font-semibold">資管論文研讀</span>、<span class="text-indigo-300 font-semibold">Claude Code AI 開發</span>、<span class="text-emerald-300 font-semibold">規律健身</span> 與 <span class="text-amber-300 font-semibold">財商升級</span>。透過數據化呈現與 AI 導師即時諮詢，為你最佳化每一天的精緻時間分配。
+                    </p>
+                </div>
+
+                <!-- Quick Stats Grid -->
+                <div class="grid grid-cols-2 gap-3 font-mono">
+                    <div class="bg-slate-900/90 border border-slate-800 p-3.5 rounded-xl text-center">
+                        <div class="text-xs text-slate-400 mb-1">今日完成度</div>
+                        <div id="todayProgressText" class="text-2xl font-black text-cyan-400">65%</div>
+                        <div class="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
+                            <div id="todayProgressBar" class="bg-gradient-to-r from-cyan-400 to-blue-500 h-full" style="width: 65%;"></div>
+                        </div>
+                    </div>
+                    <div class="bg-slate-900/90 border border-slate-800 p-3.5 rounded-xl text-center">
+                        <div class="text-xs text-slate-400 mb-1">連續自律天數</div>
+                        <div class="text-2xl font-black text-emerald-400 flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-fire text-amber-500 text-xl"></i>
+                            <span>18 天</span>
+                        </div>
+                        <div class="text-[10px] text-slate-500 mt-1">歷史最高: 42 天</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- AI TUTOR / IMMEDIATE MENTOR CONSULTATION AREA -->
+        <section class="glass-panel rounded-2xl p-6 relative border border-cyan-500/30 shadow-lg shadow-cyan-950/20">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-lg bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300 shadow-sm shadow-cyan-500/50">
+                        <i class="fa-solid fa-robot text-lg animate-bounce"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <span>AI 即時任務導師</span>
+                            <span class="text-[10px] bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 px-2 py-0.5 rounded font-mono font-black">GEMINI 3.1 POWERED</span>
+                        </h2>
+                        <p class="text-xs text-slate-400">告訴 AI 你目前的狀態、剩餘時間或心情，獲得當下最完美的模組化行動方案。</p>
+                    </div>
+                </div>
+                <button id="clearAiBtn" onclick="clearAiInput()" class="text-xs text-slate-500 hover:text-slate-300 font-mono transition">
+                    <i class="fa-solid fa-rotate-left mr-1"></i>重設
+                </button>
+            </div>
+
+            <!-- Input Form & Quick Pills -->
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-mono text-cyan-400/90 mb-1.5">
+                        <i class="fa-solid fa-terminal mr-1"></i>輸入你現在的狀態、精力強度與時間限制：
+                    </label>
+                    <textarea id="aiStatusInput" rows="3" 
+                        class="w-full bg-slate-950/90 border border-slate-700/80 rounded-xl p-3.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 font-sans transition resize-none"
+                        placeholder="例如：「剛研讀完英文論文有點累，還有1小時自由時間，不想太燒腦但想做點有意義的事...」"></textarea>
+                </div>
+
+                <!-- Quick Pills -->
+                <div class="space-y-1.5">
+                    <span class="text-[11px] text-slate-400 font-mono">快速情境選擇（點擊套用）：</span>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="setQuickPill('剛研讀完英文論文，大腦有點疲憊，剩餘 45 分鐘自由時間。')" class="text-xs bg-slate-800/90 hover:bg-cyan-950/60 text-slate-300 hover:text-cyan-300 border border-slate-700 hover:border-cyan-500/50 px-3 py-1.5 rounded-lg transition duration-200">
+                            🧠 剛研讀完論文，大腦疲憊 (45m)
+                        </button>
+                        <button onclick="setQuickPill('剩餘 1 小時，精神很好，想進行高效率的研究或程式開發。')" class="text-xs bg-slate-800/90 hover:bg-cyan-950/60 text-slate-300 hover:text-cyan-300 border border-slate-700 hover:border-cyan-500/50 px-3 py-1.5 rounded-lg transition duration-200">
+                            ⚡ 剩 1 小時，想高效率衝刺
+                        </button>
+                        <button onclick="setQuickPill('剛從民雄健身房訓練回來，體力已消耗，想放鬆但不想虛度光陰。')" class="text-xs bg-slate-800/90 hover:bg-cyan-950/60 text-slate-300 hover:text-cyan-300 border border-slate-700 hover:border-cyan-500/50 px-3 py-1.5 rounded-lg transition duration-200">
+                            🏋️ 剛健身回來，體力恢復中
+                        </button>
+                        <button onclick="setQuickPill('晚上覺得很混亂，不知道該先做論文、AI開發還是財商學習。')" class="text-xs bg-slate-800/90 hover:bg-cyan-950/60 text-slate-300 hover:text-cyan-300 border border-slate-700 hover:border-cyan-500/50 px-3 py-1.5 rounded-lg transition duration-200">
+                            🧭 狀態混亂，需要建立優先序
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Ask Button -->
+                <div class="pt-1 flex justify-end">
+                    <button id="askAiBtn" onclick="askAiMentor()" class="w-full sm:w-auto relative group overflow-hidden rounded-xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 p-[1px] font-bold transition-all duration-300 shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40">
+                        <div class="relative bg-slate-950 group-hover:bg-opacity-80 px-6 py-2.5 rounded-[11px] transition duration-300 flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-sparkles text-cyan-400 group-hover:rotate-12 transition transform"></i>
+                            <span class="text-sm text-white tracking-wide font-mono">諮詢 AI 導師建議</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- AI Response Modal / Panel Container -->
+            <div id="aiResponsePanel" class="hidden mt-6 bg-slate-950/90 border border-cyan-500/40 rounded-xl p-5 relative overflow-hidden">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping"></span>
+                        <span class="font-mono text-xs text-cyan-300 uppercase font-bold">AI Mentor Realtime Directive</span>
+                    </div>
+                    <button onclick="closeAiPanel()" class="text-slate-400 hover:text-white text-xs p-1">
+                        <i class="fa-solid fa-xmark text-base"></i>
+                    </button>
+                </div>
+
+                <!-- Loading State -->
+                <div id="aiLoading" class="py-8 text-center space-y-3">
+                    <div class="inline-block relative w-12 h-12">
+                        <div class="absolute top-0 left-0 w-full h-full border-4 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin"></div>
+                    </div>
+                    <p class="text-xs font-mono text-cyan-300 animate-pulse">正在演算法化當前狀態、計算模組化的最佳優先順序...</p>
+                </div>
+
+                <!-- Content Display -->
+                <div id="aiContent" class="hidden markdown-body text-sm text-slate-200">
+                    <!-- Dynamic Stream Content -->
+                </div>
+            </div>
+        </section>
+
+        <!-- CORE MODULES DASHBOARD GRID -->
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+            <!-- 1. 學術論文模組 -->
+            <div class="glass-panel rounded-2xl p-5 border border-slate-800 flex flex-col justify-between hover:border-cyan-500/30 transition duration-300">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-mono px-2 py-1 bg-cyan-500/10 text-cyan-300 rounded border border-cyan-500/20">MODULE 01</span>
+                        <i class="fa-solid fa-graduation-cap text-cyan-400 text-lg"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-white mb-1">資管論文與學術突破</h3>
+                    <p class="text-xs text-slate-400 mb-4">研讀重點頂會文獻、英文閱讀訓練與論文構想。</p>
+                    
+                    <ul class="space-y-2.5 text-xs">
+                        <li class="flex items-center justify-between p-2 rounded bg-slate-900/60 border border-slate-800/80">
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" checked onchange="toggleTask(this)" class="rounded border-slate-700 text-cyan-500 focus:ring-0 bg-slate-800">
+                                <span class="text-slate-300">研讀一篇 IEEE/MISQ 論文摘要</span>
+                            </label>
+                            <span class="text-[10px] font-mono text-cyan-400 bg-cyan-950/80 px-1.5 py-0.5 rounded">30m</span>
+                        </li>
+                        <li class="flex items-center justify-between p-2 rounded bg-slate-900/60 border border-slate-800/80">
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" onchange="toggleTask(this)" class="rounded border-slate-700 text-cyan-500 focus:ring-0 bg-slate-800">
+                                <span class="text-slate-300">英文學術單字集卡牌複習 (Anki)</span>
+                            </label>
+                            <span class="text-[10px] font-mono text-cyan-400 bg-cyan-950/80 px-1.5 py-0.5 rounded">15m</span>
+                        </li>
+                        <li class="flex items-center justify-between p-2 rounded bg-slate-900/60 border border-slate-800/80">
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" onchange="toggleTask(this)" class="rounded border-slate-700 text-cyan-500 focus:ring-0 bg-slate-800">
+                                <span class="text-slate-300">撰寫本週實驗進度筆記</span>
+                            </label>
+                            <span class="text-[10px] font-mono text-cyan-400 bg-cyan-950/80 px-1.5 py-0.5 rounded">45m</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-mono text-slate-400">
+                    <span>進度: 1/3</span>
+                    <span class="text-cyan-400 font-bold">33%</span>
+                </div>
+            </div>
+
+            <!-- 2. AI 開發模組 -->
+            <div class="glass-panel rounded-2xl p-5 border border-slate-800 flex flex-col justify-between hover:border-indigo-500/30 transition duration-300">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-mono px-2 py-1 bg-indigo-500/10 text-indigo-300 rounded border border-indigo-500/20">MODULE 02</span>
+                        <i class="fa-solid fa-code text-indigo-400 text-lg"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-white mb-1">Claude Code & AI 工具開發</h3>
+                    <p class="text-xs text-slate-400 mb-4">掌握實用 Prompt 工程、極速原型構建與工作流自動化。</p>
+
+                    <ul class="space-y-2.5 text-xs">
+                        <li class="flex items-center justify-between p-2 rounded bg-slate-900/60 border border-slate-800/80">
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" checked onchange="toggleTask(this)" class="rounded border-slate-700 text-indigo-500 focus:ring-0 bg-slate-800">
+                                <span class="text-slate-300">微調 Claude Code 任務 Prompt 樣板</span>
+                            </label>
+                            <span class="text-[10px] font-mono text-indigo-400 bg-indigo-950/80 px-1.5 py-0.5 rounded">20m</span>
+                        </li>
+                        <li class="flex items-center justify-between p-2 rounded bg-slate-900/60 border border-slate-800/80">
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" checked onchange="toggleTask(this)" class="rounded border-slate-700 text-indigo-500 focus:ring-0 bg-slate-800">
+                                <span class="text-slate-300">測試 Gemini API 跨模組整合功能</span>
+                            </label>
+                            <span class="text-[10px] font-mono text-indigo-400 bg-indigo-950/80 px-1.5 py-0.5 rounded">30m</span>
+                        </li>
+                        <li class="flex items-center justify-between p-2 rounded bg-slate-900/60 border border-slate-800/80">
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" onchange="toggleTask(this)" class="rounded border-slate-700 text-indigo-500 focus:ring-0 bg-slate-800">
+                                <span class="text-slate-300">重構自律系統自動備份腳本</span>
+                            </label>
+                            <span class="text-[10px] font-mono text-indigo-400 bg-indigo-950/80 px-1.5 py-0.5 rounded">30m</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-mono text-slate-400">
+                    <span>進度: 2/3</span>
+                    <span class="text-indigo-400 font-bold">66%</span>
+                </div>
+            </div>
+
+            <!-- 3. 強健體魄與健身 -->
+            <div class="glass-panel rounded-2xl p-5 border border-slate-800 flex flex-col justify-between hover:border-emerald-500/30 transition duration-300">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-mono px-2 py-1 bg-emerald-500/10 text-emerald-300 rounded border border-emerald-500/20">MODULE 03</span>
+                        <i class="fa-solid fa-dumbbell text-emerald-400 text-lg"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-white mb-1">體能重塑與規律健身</h3>
+                    <p class="text-xs text-slate-400 mb-4">民雄健身房重訓、高蛋白飲食與充足睡眠。</p>
+
+                    <ul class="space-y-2.5 text-xs">
+                        <li class="flex items-center justify-between p-2 rounded bg-slate-900/60 border border-slate-800/80">
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" checked onchange="toggleTask(this)" class="rounded border-slate-700 text-emerald-500 focus:ring-0 bg-slate-800">
+                                <span class="text-slate-300">胸背肌群規律重量訓練</span>
+                            </label>
+                            <span class="text-[10px] font-mono text-emerald-400 bg-emerald-950/80 px-1.5 py-0.5 rounded">60m</span>
+                        </li>
+                        <li class="flex items-center justify-between p-2 rounded bg-slate-900/60 border border-slate-800/80">
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" checked onchange="toggleTask(this)" class="rounded border-slate-700 text-emerald-500 focus:ring-0 bg-slate-800">
+                                <span class="text-slate-300">補充高蛋白質 (120g 標竿)</span>
+                            </label>
+                            <span class="text-[10px] font-mono text-emerald-400 bg-emerald-950/80 px-1.5 py-0.5 rounded">整天</span>
+                        </li>
+                        <li class="flex items-center justify-between p-2 rounded bg-slate-900/60 border border-slate-800/80">
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" onchange="toggleTask(this)" class="rounded border-slate-700 text-emerald-500 focus:ring-0 bg-slate-800">
+                                <span class="text-slate-300">睡前 15 分鐘全身拉筋舒緩</span>
+                            </label>
+                            <span class="text-[10px] font-mono text-emerald-400 bg-emerald-950/80 px-1.5 py-0.5 rounded">15m</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-mono text-slate-400">
+                    <span>進度: 2/3</span>
+                    <span class="text-emerald-400 font-bold">66%</span>
+                </div>
+            </div>
+
+            <!-- 4. 財商升級 -->
+            <div class="glass-panel rounded-2xl p-5 border border-slate-800 flex flex-col justify-between hover:border-amber-500/30 transition duration-300">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-mono px-2 py-1 bg-amber-500/10 text-amber-300 rounded border border-amber-500/20">MODULE 04</span>
+                        <i class="fa-solid fa-chart-line text-amber-400 text-lg"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-white mb-1">財商思維與資產累積</h3>
+                    <p class="text-xs text-slate-400 mb-4">美股ETF指數投資、軟體工程副業規劃與記帳。</p>
+
+                    <ul class="space-y-2.5 text-xs">
+                        <li class="flex items-center justify-between p-2 rounded bg-slate-900/60 border border-slate-800/80">
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" checked onchange="toggleTask(this)" class="rounded border-slate-700 text-amber-500 focus:ring-0 bg-slate-800">
+                                <span class="text-slate-300">紀錄今日開銷與預算檢視</span>
+                            </label>
+                            <span class="text-[10px] font-mono text-amber-400 bg-amber-950/80 px-1.5 py-0.5 rounded">5m</span>
+                        </li>
+                        <li class="flex items-center justify-between p-2 rounded bg-slate-900/60 border border-slate-800/80">
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" onchange="toggleTask(this)" class="rounded border-slate-700 text-amber-500 focus:ring-0 bg-slate-800">
+                                <span class="text-slate-300">閱讀 1 章財商/總體經濟書籍</span>
+                            </label>
+                            <span class="text-[10px] font-mono text-amber-400 bg-amber-950/80 px-1.5 py-0.5 rounded">20m</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-mono text-slate-400">
+                    <span>進度: 1/2</span>
+                    <span class="text-amber-400 font-bold">50%</span>
+                </div>
+            </div>
+
+            <!-- 5. 娛樂充電與調劑 -->
+            <div class="glass-panel rounded-2xl p-5 border border-slate-800 flex flex-col justify-between hover:border-pink-500/30 transition duration-300 md:col-span-2 lg:col-span-2">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-mono px-2 py-1 bg-pink-500/10 text-pink-300 rounded border border-pink-500/20">MODULE 05</span>
+                        <i class="fa-solid fa-gamepad text-pink-400 text-lg"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-white mb-1">高質感放鬆與大腦充電</h3>
+                    <p class="text-xs text-slate-400 mb-4">無罪惡感適度娛樂：Valorant 特戰英豪、J-Pop 音樂與高質量睡眠。</p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="p-2.5 rounded bg-slate-900/60 border border-slate-800/80 flex items-center justify-between">
+                            <span class="text-xs text-slate-300">Valorant 競技打 1-2 把放鬆</span>
+                            <span class="text-[10px] font-mono text-pink-400 bg-pink-950/80 px-1.5 py-0.5 rounded">40m</span>
+                        </div>
+                        <div class="p-2.5 rounded bg-slate-900/60 border border-slate-800/80 flex items-center justify-between">
+                            <span class="text-xs text-slate-300">聆聽最新 J-Pop 歌單寫筆記</span>
+                            <span class="text-[10px] font-mono text-pink-400 bg-pink-950/80 px-1.5 py-0.5 rounded">20m</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400 font-mono">
+                    <span>提示: 高效自律包含高質量的休息與恢復</span>
+                    <span class="text-pink-400 font-bold">RECHARGE MODE</span>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <script>
+        // Live Clock
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('liveClock').textContent = now.toTimeString().split(' ')[0];
+            const options = { year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short' };
+            document.getElementById('liveDate').textContent = now.toLocaleDateString('zh-TW', options);
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Checkbox Progress Update
+        function toggleTask(checkbox) {
+            const label = checkbox.nextElementSibling;
+            if (checkbox.checked) {
+                label.classList.add('line-through', 'text-slate-500');
+                confetti({
+                    particleCount: 30,
+                    spread: 50,
+                    origin: { y: 0.8 },
+                    colors: ['#00f2fe', '#4facfe', '#7928ca']
+                });
+            } else {
+                label.classList.remove('line-through', 'text-slate-500');
+            }
+        }
+
+        // Quick Pills Setter
+        function setQuickPill(text) {
+            const textarea = document.getElementById('aiStatusInput');
+            textarea.value = text;
+            textarea.focus();
+        }
+
+        function clearAiInput() {
+            document.getElementById('aiStatusInput').value = '';
+            closeAiPanel();
+        }
+
+        function closeAiPanel() {
+            document.getElementById('aiResponsePanel').classList.add('hidden');
+        }
+
+        // GEMINI API INTEGRATION
+        async function askAiMentor() {
+            const input = document.getElementById('aiStatusInput').value.trim();
+            if (!input) {
+                alert('請先輸入你目前的狀況、心情或剩餘時間喔！');
+                return;
+            }
+
+            const responsePanel = document.getElementById('aiResponsePanel');
+            const loading = document.getElementById('aiLoading');
+            const content = document.getElementById('aiContent');
+            const askBtn = document.getElementById('askAiBtn');
+
+            responsePanel.classList.remove('hidden');
+            loading.classList.remove('hidden');
+            content.classList.add('hidden');
+            content.innerHTML = '';
+            askBtn.disabled = true;
+
+            // System Instruction with Hsiang's Persona
+            const systemInstruction = `
+你是一位專屬於「翔仔」的頂級自律系統導師兼生活演算法顧問。
+【翔仔的背景資料】：
+- 身分：國立中正大學資管所碩一學生 (研讀頂會文獻、英文學術寫作)
+- 核心技術領域：Claude Code AI 工具開發、Prompt 工程、自動化流程設計
+- 生活習慣與興趣：規律重訓健身 (在民雄宿舍/健身房)、財商與美股投資升級、喜歡 Valorant 特戰英豪與 J-Pop 歌單放鬆
+- 座右銘：「把複雜的事情模組化，把混亂的生活演算法化。」
+
+【你的任務與回應風格】：
+1. 根據翔仔輸入的「當前狀況與精力狀態」，為他提供**最適合當下執行的模組化行動建議**。
+2. 回應請簡明扼要、具備強烈科技質感與極致陪伴感。
+3. 格式要求包含：
+   - 🎯 **推薦執行項目**（標註明確時間如 15m, 30m，以及屬於哪一個模組）
+   - 💡 **建議理由與心理建構**（結合他的座右銘，幫他減少決策消耗）
+   - 🚀 **立即行動 Step 1**（第一步只需要耗時 1 分鐘的微行動）
+
+請使用清晰流暢的 Markdown 格式回覆。
+`;
+
+            const prompt = `翔仔目前回報的最新狀態：
+「${input}」
+
+請導師給予目前最精準、最有建設性且符合演算法化原則的行動方案。`;
+
+            // Call Gemini API with Exponential Backoff
+            const apiKey = ""; // Left empty for automatic runtime injection
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { parts: [{ text: systemInstruction }] }
+            };
+
+            let attempts = 0;
+            let success = false;
+            let resultData = null;
+
+            while (attempts < 3 && !success) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.ok) {
+                        resultData = await response.json();
+                        success = true;
+                    } else {
+                        attempts++;
+                        await new Promise(r => setTimeout(r, Math.pow(2, attempts) * 1000));
+                    }
+                } catch (err) {
+                    attempts++;
+                    await new Promise(r => setTimeout(r, Math.pow(2, attempts) * 1000));
+                }
+            }
+
+            loading.classList.add('hidden');
+            content.classList.remove('hidden');
+            askBtn.disabled = false;
+
+            if (success && resultData?.candidates?.[0]?.content?.parts?.[0]?.text) {
+                const rawText = resultData.candidates[0].content.parts[0].text;
+                // Render via marked library
+                content.innerHTML = marked.parse(rawText);
+            } else {
+                content.innerHTML = `<p class="text-rose-400"><i class="fa-solid fa-triangle-exclamation mr-2"></i>連線至 AI 導師核心時發生微小波動，請稍後再試一次。</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
